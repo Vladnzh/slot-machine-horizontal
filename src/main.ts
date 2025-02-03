@@ -8,7 +8,6 @@ import { HorizontalSlotMachine } from "./HorizontalSlotMachine";
     });
     document.body.appendChild(app.view as HTMLCanvasElement);
 
-    // Создаем слот-машину (логика колеса)
     const slotMachine = new HorizontalSlotMachine({
         elementWidth: 130,
         elementHeight: 150,
@@ -20,7 +19,7 @@ import { HorizontalSlotMachine } from "./HorizontalSlotMachine";
         maxAnglePercent: 150,
         verticalReduction: 0.5,
         skewFactor: 0,
-        maskWidth: 400,
+        // maskWidth: 400,
         maskHeight: 150,
         rotationSpeed: 1,
         acceleration: 0.3
@@ -28,17 +27,15 @@ import { HorizontalSlotMachine } from "./HorizontalSlotMachine";
     await slotMachine.init();
     slotMachine.setWinningTexture(Texture.from('https://pixijs.com/assets/eggHead.png'));
 
-    // Добавляем контейнер слота в сцену
+    slotMachine.container.x = (app.screen.width - (slotMachine.symbolsAmount * slotMachine.elementWidth)) / 2;
+    slotMachine.container.y = (app.screen.height - slotMachine.elementHeight) / 2;
 
-    // UI-элементы создаются отдельно
-
-    // Кнопка (круглая)
     const bottom = new Graphics();
     const btnWidth = 100;
     const btnHeight = 100;
     const btnRadius = 100;
-    const btnX = (app.screen.width - btnWidth) / 2;
-    const btnY = app.screen.height - btnHeight - 20;
+    let btnX = (app.screen.width - btnWidth) / 2;
+    let btnY = app.screen.height - btnHeight - 20;
     bottom.beginFill(0x000000);
     bottom.drawRoundedRect(btnX, btnY, btnWidth, btnHeight, btnRadius);
     bottom.endFill();
@@ -59,16 +56,14 @@ import { HorizontalSlotMachine } from "./HorizontalSlotMachine";
         slotMachine.spin();
     });
 
-    // Рамка (UI) — отображается вокруг области колеса
-    const totalWidth = slotMachine['symbolsAmount'] * slotMachine['elementWidth'];
-    const containerX = (window.innerWidth - totalWidth) / 2;
-    const containerY = (window.innerHeight - slotMachine['elementHeight']) / 2;
+    const totalWidth = slotMachine.symbolsAmount * slotMachine.elementWidth;
+    let containerX = (app.screen.width - totalWidth) / 2;
+    let containerY = (app.screen.height - slotMachine.elementHeight) / 2;
     const border = new Graphics();
     border.lineStyle(4, 0xff0000, 1);
-    border.drawRect(containerX, containerY, totalWidth, slotMachine['elementHeight']);
+    border.drawRect(containerX, containerY, totalWidth, slotMachine.elementHeight);
     border.endFill();
 
-    // Стрелка (UI)
     const arrow = new Graphics();
     arrow.beginFill(0xff0000);
     arrow.moveTo(0, 0);
@@ -86,14 +81,43 @@ import { HorizontalSlotMachine } from "./HorizontalSlotMachine";
     app.stage.addChild(playText);
     app.stage.addChild(border);
     app.stage.addChild(arrow);
-
-    // Обработчик нажатия пробела
+    
+    
     document.addEventListener('keydown', (event) => {
         if (event.code === "Space" || event.key === " ") {
             slotMachine.spin();
         }
     });
 
+    window.addEventListener('resize', () => {
+        let totalWidth = slotMachine.symbolsAmount * slotMachine.elementWidth;
+        slotMachine.container.x = (app.screen.width - totalWidth) / 2;
+        slotMachine.container.y = (app.screen.height - slotMachine.elementHeight) / 2;
+        
+        btnX = (app.screen.width - btnWidth) / 2;
+        btnY = app.screen.height - btnHeight - 20;
+        bottom.x = 0;
+        bottom.clear();
+        bottom.beginFill(0x000000);
+        bottom.drawRoundedRect(btnX, btnY, btnWidth, btnHeight, btnRadius);
+        bottom.endFill();
+
+        playText.x = btnX + btnWidth / 2;
+        playText.y = btnY + btnHeight / 2;
+
+        totalWidth = slotMachine.symbolsAmount * slotMachine.elementWidth;
+        containerX = (app.screen.width - totalWidth) / 2;
+        containerY = (app.screen.height - slotMachine.elementHeight) / 2;
+       
+        border.clear();
+        border.lineStyle(4, 0xff0000, 1);
+        border.drawRect(containerX, containerY, totalWidth, slotMachine.elementHeight);
+        border.endFill();
+
+        arrow.x = containerX + totalWidth / 2;
+        arrow.y = containerY - 25;
+    });
+    
     // Обновляем слот-машину в тикере
     app.ticker.add((delta) => {
         slotMachine.update(delta);

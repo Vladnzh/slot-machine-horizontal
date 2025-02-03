@@ -19,7 +19,6 @@ export interface HorizontalSlotMachineOptions {
 }
 
 export class HorizontalSlotMachine {
-    // Параметры
     public elementWidth: number;
     public elementHeight: number;
     public symbolsAmount: number;
@@ -37,14 +36,12 @@ export class HorizontalSlotMachine {
     public acceleration: number;
     public slotTextureUrls: string[];
 
-    // Логика вращения
     protected wheel: { container: Container; symbols: Sprite[]; position: number } | null;
     protected tweening: any[];
     protected running: boolean;
     protected slotTextures: Texture[];
     protected wheelSequence: Texture[];
 
-    // Контейнер, который создается классом
     public container: Container;
 
     constructor(options: HorizontalSlotMachineOptions = {}) {
@@ -71,11 +68,6 @@ export class HorizontalSlotMachine {
         ];
 
         this.container = new Container();
-        // Центрируем контейнер по экрану (используем window.innerWidth/Height)
-        const totalWidth = this.symbolsAmount * this.elementWidth;
-        this.container.x = (window.innerWidth - totalWidth) / 2;
-        this.container.y = (window.innerHeight - this.elementHeight) / 2;
-
         this.wheel = null;
         this.tweening = [];
         this.running = false;
@@ -99,17 +91,11 @@ export class HorizontalSlotMachine {
 
     protected createWheel(): void {
         const totalWidth = this.symbolsAmount * this.elementWidth;
-        // Создаем отдельный контейнер для "колеса"
         const wheelContainer = new Container();
-        // Центрируем контейнер внутри внешнего container (если нужно, можно менять позиционирование)
-        wheelContainer.x = (this.container.width - totalWidth) / 2;
-        wheelContainer.y = 0; // оставляем вертикальное положение 0 внутри нашего container
-
         const sequenceLength = 10 * this.symbolsAmount;
         this.wheelSequence = new Array(sequenceLength)
             .fill(null)
             .map(() => this.slotTextures[Math.floor(Math.random() * this.slotTextureUrls.length)]);
-
         const symbols: Sprite[] = [];
         for (let i = 0; i < this.symbolsAmount + 1; i++) {
             const texture = this.wheelSequence[i];
@@ -122,11 +108,8 @@ export class HorizontalSlotMachine {
             wheelContainer.addChild(symbol);
         }
         this.wheel = { container: wheelContainer, symbols, position: 0 };
-
-        // Добавляем колесо в наш основной контейнер
         this.container.addChild(wheelContainer);
 
-        // Создаем маску, центрированную относительно колеса
         const mask = new Graphics();
         mask.beginFill(0xffffff);
         mask.drawRect(-this.maskWidth / 2, -this.maskHeight / 2, this.maskWidth, this.maskHeight);
@@ -151,16 +134,14 @@ export class HorizontalSlotMachine {
             this.wheelSequence[finalIndex] = this.slotTextures[this.winningIndex];
         }
         const time = this.spinningTime / this.rotationSpeed * (1 / this.acceleration);
-        this.tweenTo(this.wheel, 'position', target, time, this.backout(this.backOutEffect), null, this.onWheelComplete.bind(this));
+        this.tweenTo(this.wheel, 'position', target, time, this.backOut(this.backOutEffect), null, this.onWheelComplete.bind(this));
     }
 
     protected onWheelComplete(): void {
         this.running = false;
     }
 
-    // Метод, который должен вызываться из внешнего тикера
     public update(deltaTime: number): void {
-        // Можно использовать deltaTime, если требуется
         if (!this.wheel) return;
         const w = this.wheel;
         const fraction = w.position - Math.floor(w.position);
@@ -203,7 +184,7 @@ export class HorizontalSlotMachine {
         for (let i = 0; i < this.tweening.length; i++) {
             const t = this.tweening[i];
             const phase = Math.min(1, (now - t.start) / t.time);
-            t.object[t.property] = this.lerp(t.propertyBeginValue, t.target, t.easing(phase));
+            t.object[t.property] = this.interpolate(t.propertyBeginValue, t.target, t.easing(phase));
             if (t.change) t.change(t);
             if (phase === 1) {
                 t.object[t.property] = t.target;
@@ -232,11 +213,11 @@ export class HorizontalSlotMachine {
         return tween;
     }
 
-    protected lerp(a: number, b: number, t: number): number {
+    protected interpolate(a: number, b: number, t: number): number {
         return a * (1 - t) + b * t;
     }
 
-    protected backout(amount: number): (t: number) => number {
+    protected backOut(amount: number): (t: number) => number {
         return t => --t * t * ((amount + 1) * t + amount) + 1;
     }
 }
