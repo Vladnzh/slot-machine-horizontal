@@ -11,7 +11,7 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
     const slotMachine = new HorizontalSlotMachine({
         elementWidth: 130,
         elementHeight: 150,
-        symbolsAmount: 3,
+        elementAmount: 3,
         arrowSlotIndex: 1,
         spinningTime: 2000,
         winningIndex: 3,
@@ -26,9 +26,7 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
     })
     await slotMachine.init()
     slotMachine.setWinningTexture(Texture.from('https://pixijs.com/assets/eggHead.png'))
-
-    slotMachine.container.x = (app.screen.width - (slotMachine.symbolsAmount * slotMachine.elementWidth)) / 2
-    slotMachine.container.y = (app.screen.height - slotMachine.elementHeight) / 2
+    slotMachine.updatePosition((app.screen.width - (slotMachine.wheelWidth)) / 2, (app.screen.height - slotMachine.wheelHeight) / 2)
 
     const bottom = new Graphics()
     const btnWidth = 100
@@ -56,12 +54,12 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
         slotMachine.spin()
     })
 
-    const totalWidth = slotMachine.symbolsAmount * slotMachine.elementWidth
+    const totalWidth = slotMachine.wheelWidth
     let containerX = (app.screen.width - totalWidth) / 2
-    let containerY = (app.screen.height - slotMachine.elementHeight) / 2
+    let containerY = (app.screen.height - slotMachine.wheelHeight) / 2
     const border = new Graphics()
     border.lineStyle(4, 0xff0000, 1)
-    border.drawRect(containerX, containerY, totalWidth, slotMachine.elementHeight)
+    border.drawRect(containerX, containerY, totalWidth, slotMachine.wheelHeight)
     border.endFill()
 
     const arrow = new Graphics()
@@ -76,7 +74,7 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
     arrow.y = containerY - 25
 
 
-    app.stage.addChild(slotMachine.container)
+    app.stage.addChild(slotMachine)
     app.stage.addChild(bottom)
     app.stage.addChild(playText)
     app.stage.addChild(border)
@@ -90,9 +88,8 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
     })
 
     window.addEventListener('resize', () => {
-        let totalWidth = slotMachine.symbolsAmount * slotMachine.elementWidth
-        slotMachine.container.x = (app.screen.width - totalWidth) / 2
-        slotMachine.container.y = (app.screen.height - slotMachine.elementHeight) / 2
+        const totalWidth = slotMachine.wheelWidth
+        slotMachine.updatePosition((app.screen.width - totalWidth) / 2, (app.screen.height - slotMachine.wheelHeight) / 2)
 
         btnX = (app.screen.width - btnWidth) / 2
         btnY = app.screen.height - btnHeight - 20
@@ -105,13 +102,12 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
         playText.x = btnX + btnWidth / 2
         playText.y = btnY + btnHeight / 2
 
-        totalWidth = slotMachine.symbolsAmount * slotMachine.elementWidth
         containerX = (app.screen.width - totalWidth) / 2
-        containerY = (app.screen.height - slotMachine.elementHeight) / 2
+        containerY = (app.screen.height - slotMachine.wheelHeight) / 2
 
         border.clear()
         border.lineStyle(4, 0xff0000, 1)
-        border.drawRect(containerX, containerY, totalWidth, slotMachine.elementHeight)
+        border.drawRect(containerX, containerY, totalWidth, slotMachine.wheelHeight)
         border.endFill()
 
         arrow.x = containerX + totalWidth / 2
@@ -120,6 +116,5 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
 
     app.ticker.add((delta) => {
         slotMachine.update(delta)
-        slotMachine.updateTween()
     })
 })()
