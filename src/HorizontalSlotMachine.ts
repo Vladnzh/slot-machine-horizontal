@@ -1,4 +1,4 @@
-import {Assets, Container, Graphics, Sprite, Texture} from 'pixi.js'
+import {Assets, Container, Graphics, Sprite, Texture, Ticker, Point} from 'pixi.js'
 
 export class HorizontalSlotMachine extends Container {
     public wheelWidth: number
@@ -14,7 +14,6 @@ export class HorizontalSlotMachine extends Container {
     protected winningIndex: number = 3
     protected customWinningTexture: Texture | null = null
     protected backOutEffect: number = 0.5
-    protected maxAnglePercent: number = 100
     protected verticalReduction: number = 0.1
     protected skewFactor: number = 0
     protected rotationSpeed: number = 1
@@ -26,6 +25,11 @@ export class HorizontalSlotMachine extends Container {
     protected slotTextures: Texture[]
     protected wheelSequence: Texture[]
     protected elementSpacing: number = 0
+
+    protected spinDirection: number = 1
+    protected cylinderCurvature: number = 1
+    protected edgeNarrowing: number = 0
+    protected wheelScale: Point = new Point(1, 1)
 
     protected onCompleteCallback: Function = () => {
     }
@@ -40,7 +44,6 @@ export class HorizontalSlotMachine extends Container {
         this.winningIndex = options.winningIndex ?? this.winningIndex
         this.customWinningTexture = null
         this.backOutEffect = options.backOutEffect ?? this.backOutEffect
-        this.maxAnglePercent = options.maxAnglePercent ?? this.maxAnglePercent
         this.verticalReduction = options.verticalReduction ?? this.verticalReduction
         this.skewFactor = options.skewFactor ?? this.skewFactor
         this.elementSpacing = options.elementSpacing ?? 0
@@ -54,7 +57,10 @@ export class HorizontalSlotMachine extends Container {
             'https://pixijs.com/assets/helmlok.png',
             'https://pixijs.com/assets/skully.png'
         ]
-
+        this.spinDirection = options.spinDirection ?? 1
+        this.cylinderCurvature = options.cylinderCurvature ?? 1
+        this.edgeNarrowing = options.edgeNarrowing ?? 0
+        this.wheelScale = options.wheelScale ?? this.wheelScale
         this.wheelWidth = this.elementAmount * (this.elementWidth + this.elementSpacing)
         this.wheelHeight = this.elementHeight
         this.wheel = null
@@ -89,15 +95,16 @@ export class HorizontalSlotMachine extends Container {
         this.onCompleteCallback = onCompleteCallback
         const basePos = Math.floor(this.wheel.position)
         const extraRotations = 4
-        const target = basePos + extraRotations * this.elementAmount + this.arrowSlotIndex
+        const directionalArrowOffset = this.spinDirection > 0 ? this.arrowSlotIndex : -this.arrowSlotIndex
+        const target = basePos + this.spinDirection * (extraRotations * this.elementAmount) + directionalArrowOffset
         const sequenceLength = this.wheelSequence.length
-        const finalIndex = ((Math.floor(target)) % sequenceLength + sequenceLength) % sequenceLength + this.arrowSlotIndex
+        const finalIndex = (((Math.floor(target) % sequenceLength) + sequenceLength) % sequenceLength)
         if (this.customWinningTexture) {
             this.wheelSequence[finalIndex] = this.customWinningTexture
         } else {
             this.wheelSequence[finalIndex] = this.slotTextures[this.winningIndex]
         }
-        const time = this.spinningTime / this.rotationSpeed * (1 / this.acceleration)
+        const time = (this.spinningTime / this.rotationSpeed) * (1 / this.acceleration)
         this.tweenTo(
             this.wheel,
             'position',
@@ -117,7 +124,7 @@ export class HorizontalSlotMachine extends Container {
         const elementDistance = this.elementWidth + this.elementSpacing
         const totalWidth = this.elementAmount * elementDistance
         const centerX = totalWidth / 2
-        const maxAngle = (this.maxAnglePercent / 100) * (Math.PI / 4)
+        const maxAngle = Math.PI / 2
         const radius = centerX / Math.sin(maxAngle)
         for (let j = 0; j < this.elementAmount + 1; j++) {
             const element = w.elements[j]
@@ -133,16 +140,18 @@ export class HorizontalSlotMachine extends Container {
             const dx = linearCenter - centerX
             const t = dx / centerX
             const angle = t * maxAngle
-            const cosAngle = Math.cos(angle)
-            element.scale.x = baseScale * Math.abs(cosAngle)
-            const verticalScaleFactor = 1 - this.verticalReduction * (1 - cosAngle)
-            element.scale.y = baseScale * verticalScaleFactor
-            element.x = centerX + radius * Math.sin(angle)
-            element.y = this.elementHeight / 2
-            if (this.skewFactor) {
-                element.skew.x = angle * this.skewFactor
+            if (Math.abs(angle) > Math.PI / 2) {
+                element.visible = false
             } else {
-                element.skew.x = 0
+                element.visible = true
+                const cosAngle = Math.cos(angle)
+                element.scale.x = baseScale * Math.pow(Math.abs(cosAngle), this.cylinderCurvature)
+                const verticalScaleFactor = 1 - this.verticalReduction * (1 - cosAngle)
+                element.scale.y = baseScale * verticalScaleFactor
+                const narrowingFactor = 1 - this.edgeNarrowing * (1 - Math.cos(angle))
+                element.x = centerX + radius * Math.sin(angle) * narrowingFactor
+                element.y = this.elementHeight / 2
+                element.skew.x = this.skewFactor ? angle * this.skewFactor : 0
             }
         }
     }
@@ -186,6 +195,7 @@ export class HorizontalSlotMachine extends Container {
             wheelContainer.addChild(element)
         }
         this.wheel = {container: wheelContainer, elements, position: 0}
+        this.scale = this.wheelScale
         this.addChild(wheelContainer)
 
         const mask = new Graphics()
@@ -200,10 +210,19 @@ export class HorizontalSlotMachine extends Container {
 
     protected onWheelComplete(): void {
         this.running = false
+        Ticker.shared.remove(this.update, this)
         this.onCompleteCallback()
     }
 
-    protected tweenTo(object: any, property: string, target: number, time: number, easing: (t: number) => number, onchange: any, oncomplete: any): any {
+    protected tweenTo(
+        object: any,
+        property: string,
+        target: number,
+        time: number,
+        easing: (t: number) => number,
+        onchange: any,
+        oncomplete: any
+    ): any {
         const tween = {
             object,
             property,
@@ -236,7 +255,6 @@ export interface HorizontalSlotMachineOptions {
     spinningTime?: number;
     winningIndex?: number;
     backOutEffect?: number;
-    maxAnglePercent?: number;
     verticalReduction?: number;
     skewFactor?: number;
     maskWidth?: number;
@@ -245,4 +263,8 @@ export interface HorizontalSlotMachineOptions {
     rotationSpeed?: number;
     acceleration?: number;
     elementSpacing?: number;
+    spinDirection?: number;
+    cylinderCurvature?: number;
+    edgeNarrowing?: number;
+    wheelScale?: Point;
 }

@@ -1,4 +1,4 @@
-import {Application, Texture, Graphics, Text, TextStyle} from 'pixi.js'
+import {Application, Texture, Graphics, Text, TextStyle, Point} from 'pixi.js'
 import {HorizontalSlotMachine} from './HorizontalSlotMachine'
 
 (async () => {
@@ -9,21 +9,24 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
     document.body.appendChild(app.view as HTMLCanvasElement)
 
     const slotMachine = new HorizontalSlotMachine({
-        elementWidth: 130,
-        elementHeight: 150,
+        wheelScale: new Point(1, 1),
+        elementWidth: 320,
+        elementHeight: 300,
         elementAmount: 3,
+        elementSpacing: -150,
         arrowSlotIndex: 1,
-        spinningTime: 2000,
+        spinningTime: 2500,
         winningIndex: 3,
-        backOutEffect: 0.2,
-        maxAnglePercent: 150,
-        verticalReduction: 0.2,
+        backOutEffect: 0.5,
+        cylinderCurvature: 2,
+        edgeNarrowing: 0.2,
+        verticalReduction: 0.4,
         skewFactor: 0,
-        // maskWidth: 400,
-        maskHeight: 150,
+        maskWidth: 950,
+        maskHeight: 600,
         rotationSpeed: 1,
-        acceleration: 0.3,
-        elementSpacing: -10  
+        acceleration: 0.5,
+        spinDirection: -1
     })
     await slotMachine.init()
     slotMachine.setWinningTexture(Texture.from('https://pixijs.com/assets/eggHead.png'))
