@@ -25,7 +25,6 @@ export class HorizontalSlotMachine extends Container {
     protected running: boolean
     protected slotTextures: Texture[]
     protected wheelSequence: Texture[]
-
     protected elementSpacing: number = 0
 
     protected onCompleteCallback: Function = () => {
@@ -56,7 +55,6 @@ export class HorizontalSlotMachine extends Container {
             'https://pixijs.com/assets/skully.png'
         ]
 
-        // Вычисляем ширину колеса с учётом отступа:
         this.wheelWidth = this.elementAmount * (this.elementWidth + this.elementSpacing)
         this.wheelHeight = this.elementHeight
         this.wheel = null
