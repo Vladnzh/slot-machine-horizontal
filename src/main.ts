@@ -17,16 +17,17 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
         winningIndex: 3,
         backOutEffect: 0.2,
         maxAnglePercent: 150,
-        verticalReduction: 0.5,
+        verticalReduction: 0.2,
         skewFactor: 0,
         // maskWidth: 400,
         maskHeight: 150,
         rotationSpeed: 1,
-        acceleration: 0.3
+        acceleration: 0.3,
+        elementSpacing: -10  
     })
     await slotMachine.init()
     slotMachine.setWinningTexture(Texture.from('https://pixijs.com/assets/eggHead.png'))
-    slotMachine.updatePosition((app.screen.width - (slotMachine.wheelWidth)) / 2, (app.screen.height - slotMachine.wheelHeight) / 2)
+    slotMachine.updatePosition((app.screen.width - slotMachine.wheelWidth) / 2, (app.screen.height - slotMachine.wheelHeight) / 2)
 
     const bottom = new Graphics()
     const btnWidth = 100
@@ -54,7 +55,8 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
         slotMachine.spin()
     })
 
-    const totalWidth = slotMachine.wheelWidth
+    const elementDistance = slotMachine.elementWidth + (slotMachine as any).elementSpacing
+    const totalWidth = slotMachine.elementAmount * elementDistance
     let containerX = (app.screen.width - totalWidth) / 2
     let containerY = (app.screen.height - slotMachine.wheelHeight) / 2
     const border = new Graphics()
@@ -73,13 +75,11 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
     arrow.x = containerX + totalWidth / 2
     arrow.y = containerY - 25
 
-
     app.stage.addChild(slotMachine)
     app.stage.addChild(bottom)
     app.stage.addChild(playText)
     app.stage.addChild(border)
     app.stage.addChild(arrow)
-
 
     document.addEventListener('keydown', (event) => {
         if (event.code === 'Space' || event.key === ' ') {
@@ -88,7 +88,8 @@ import {HorizontalSlotMachine} from './HorizontalSlotMachine'
     })
 
     window.addEventListener('resize', () => {
-        const totalWidth = slotMachine.wheelWidth
+        const elementDistance = slotMachine.elementWidth + (slotMachine as any).elementSpacing
+        const totalWidth = slotMachine.elementAmount * elementDistance
         slotMachine.updatePosition((app.screen.width - totalWidth) / 2, (app.screen.height - slotMachine.wheelHeight) / 2)
 
         btnX = (app.screen.width - btnWidth) / 2

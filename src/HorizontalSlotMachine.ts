@@ -3,12 +3,12 @@ import {Assets, Container, Graphics, Sprite, Texture} from 'pixi.js'
 export class HorizontalSlotMachine extends Container {
     public wheelWidth: number
     public wheelHeight: number
-    protected elementWidth: number = 150
+    public elementWidth: number = 150
     protected elementHeight: number = 150
     protected maskWidth: number
     protected maskHeight: number
 
-    protected elementAmount: number = 5
+    public elementAmount: number = 5
     protected arrowSlotIndex: number = 2
     protected spinningTime: number = 5000
     protected winningIndex: number = 3
@@ -26,6 +26,8 @@ export class HorizontalSlotMachine extends Container {
     protected slotTextures: Texture[]
     protected wheelSequence: Texture[]
 
+    protected elementSpacing: number = 0
+
     protected onCompleteCallback: Function = () => {
     }
 
@@ -42,7 +44,8 @@ export class HorizontalSlotMachine extends Container {
         this.maxAnglePercent = options.maxAnglePercent ?? this.maxAnglePercent
         this.verticalReduction = options.verticalReduction ?? this.verticalReduction
         this.skewFactor = options.skewFactor ?? this.skewFactor
-        this.maskWidth = options.maskWidth ?? this.elementAmount * this.elementWidth
+        this.elementSpacing = options.elementSpacing ?? 0
+        this.maskWidth = options.maskWidth ?? this.elementAmount * (this.elementWidth + this.elementSpacing)
         this.maskHeight = options.maskHeight ?? this.elementHeight
         this.rotationSpeed = options.rotationSpeed ?? this.rotationSpeed
         this.acceleration = options.acceleration ?? this.acceleration
@@ -53,7 +56,8 @@ export class HorizontalSlotMachine extends Container {
             'https://pixijs.com/assets/skully.png'
         ]
 
-        this.wheelWidth = this.elementAmount * this.elementWidth
+        // Вычисляем ширину колеса с учётом отступа:
+        this.wheelWidth = this.elementAmount * (this.elementWidth + this.elementSpacing)
         this.wheelHeight = this.elementHeight
         this.wheel = null
         this.tweening = []
@@ -96,7 +100,15 @@ export class HorizontalSlotMachine extends Container {
             this.wheelSequence[finalIndex] = this.slotTextures[this.winningIndex]
         }
         const time = this.spinningTime / this.rotationSpeed * (1 / this.acceleration)
-        this.tweenTo(this.wheel, 'position', target, time, this.backOut(this.backOutEffect), null, this.onWheelComplete.bind(this))
+        this.tweenTo(
+            this.wheel,
+            'position',
+            target,
+            time,
+            this.backOut(this.backOutEffect),
+            null,
+            this.onWheelComplete.bind(this)
+        )
     }
 
     public update(deltaTime: number): void {
@@ -104,22 +116,22 @@ export class HorizontalSlotMachine extends Container {
         this.updateTween()
         const w = this.wheel
         const fraction = w.position - Math.floor(w.position)
-        const sequenceLength = this.wheelSequence.length
-        const totalWidth = this.elementAmount * this.elementWidth
+        const elementDistance = this.elementWidth + this.elementSpacing
+        const totalWidth = this.elementAmount * elementDistance
         const centerX = totalWidth / 2
         const maxAngle = (this.maxAnglePercent / 100) * (Math.PI / 4)
         const radius = centerX / Math.sin(maxAngle)
         for (let j = 0; j < this.elementAmount + 1; j++) {
             const element = w.elements[j]
             const virtualIndex = Math.floor(w.position) + j
-            const seqIndex = ((virtualIndex % sequenceLength) + sequenceLength) % sequenceLength
+            const seqIndex = ((virtualIndex % this.wheelSequence.length) + this.wheelSequence.length) % this.wheelSequence.length
             const newTexture = this.wheelSequence[seqIndex]
             if (element.texture !== newTexture) {
                 element.texture = newTexture
             }
             element.anchor.set(0.5)
             const baseScale = Math.min(this.elementWidth / newTexture.width, this.elementHeight / newTexture.height)
-            const linearCenter = j * this.elementWidth - fraction * this.elementWidth + this.elementWidth / 2
+            const linearCenter = j * elementDistance - fraction * elementDistance + elementDistance / 2
             const dx = linearCenter - centerX
             const t = dx / centerX
             const angle = t * maxAngle
@@ -157,7 +169,8 @@ export class HorizontalSlotMachine extends Container {
     }
 
     protected createWheel(): void {
-        const totalWidth = this.elementAmount * this.elementWidth
+        const elementDistance = this.elementWidth + this.elementSpacing
+        const totalWidth = this.elementAmount * elementDistance
         const wheelContainer = new Container()
         const sequenceLength = 10 * this.elementAmount
         this.wheelSequence = new Array(sequenceLength)
@@ -169,7 +182,7 @@ export class HorizontalSlotMachine extends Container {
             const element = new Sprite(texture)
             element.anchor.set(0.5)
             element.scale.set(Math.min(this.elementWidth / texture.width, this.elementHeight / texture.height))
-            element.x = this.elementWidth / 2
+            element.x = elementDistance / 2
             element.y = this.elementHeight / 2
             elements.push(element)
             wheelContainer.addChild(element)
@@ -217,7 +230,6 @@ export class HorizontalSlotMachine extends Container {
     }
 }
 
-
 export interface HorizontalSlotMachineOptions {
     elementWidth?: number;
     elementHeight?: number;
@@ -234,4 +246,5 @@ export interface HorizontalSlotMachineOptions {
     slotTextureUrls?: string[];
     rotationSpeed?: number;
     acceleration?: number;
+    elementSpacing?: number;
 }
